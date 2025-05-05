@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#2196f3" />
+  <title>News App</title>
+  <!-- Framework7 CSS from CDN -->
+  <link rel="stylesheet" href="/node_modules/framework7/framework7-bundle.min.css" />
+  <!-- Framework7 Icons from CDN -->
+  <link rel="stylesheet" href="/node_modules/framework7-icons/css/framework7-icons.css" />
+  <style>
+    html, body, #app {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      background-color: #f0f0f0;
+    }
+    .view-main {
+      height: 100%;
+    }
+    .item-subtitle {
+      color: var(--f7-text-color-secondary);
+      font-size: 13px;
+    }
+    /* Add padding to popup modal content body */
+    #popup-article-content {
+      padding-left: 16px;
+      padding-right: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="statusbar"></div>
+    <div class="view view-main safe-areas">
+      <div data-name="home" class="page">
+        <div class="navbar">
+          <div class="navbar-bg"></div>
+          <div class="navbar-inner">
+            <div class="title">News Headlines</div>
+          </div>
+        </div>
+        <div class="page-content">
+          <div class="list media-list" id="news-list-container">
+            <ul id="news-list">
+              <li class="item-content skeleton-text skeleton-effect-fade">
+                <div class="item-inner">
+                  <div class="item-title-row">
+                    <div class="item-title"><a>Headline loading...</a></div>
+                  </div>
+                  <div class="item-subtitle">Date and publisher loading...</div>
+                </div>
+              </li>
+              <li class="item-content skeleton-text skeleton-effect-fade">
+                <div class="item-inner">
+                  <div class="item-title-row">
+                    <div class="item-title"><a>Headline loading...</a></div>
+                  </div>
+                  <div class="item-subtitle">Date and publisher loading...</div>
+                </div>
+              </li>
+              <li class="item-content skeleton-text skeleton-effect-fade">
+                <div class="item-inner">
+                  <div class="item-title-row">
+                    <div class="item-title"><a>Headline loading...</a></div>
+                  </div>
+                  <div class="item-subtitle">Date and publisher loading...</div>
+                </div>
+              </li>
+          </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Popup Modal for Article -->
+    <div class="popup" id="article-popup">
+      <div class="view">
+        <div class="page">
+          <div class="navbar">
+            <div class="navbar-inner">
+              <div class="title" id="popup-article-title">Article</div>
+              <div class="right">
+                <a href="#" class="link popup-close">Close</a>
+              </div>
+            </div>
+          </div>
+          <div class="page-content" id="popup-article-content">
+            <p>Loading article...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Framework7 JS from CDN -->
+  <script src="/node_modules/framework7/framework7-bundle.js"></script>
+  <script type="module">
+    const app = new Framework7({
+      root: '#app',
+      name: 'News App',
+      id: 'com.news.app',
+      theme: 'auto',
+      statusbar: {
+        enabled: true,
+        overlay: 'auto',
+      },
+    });
+
+    const mainView = app.views.create('.view-main');
+
+    // Fetch news data from backend API
+    async function fetchNewsData() {
+      console.log('fetchNewsData called');
+      const newsListEl = document.getElementById('news-list');
+      if (!newsListEl) return;
+      newsListEl.innerHTML = ''; // Clear skeletons
+
+      try {
+        const response = await fetch('/api/news');
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const newsData = await response.json();
+        console.log('News data received from /api/news:', newsData);
+
+        if (!newsData || newsData.length === 0) {
+          newsListEl.innerHTML = '<li class="item-content"><div class="item-inner"><div class="item-title">No news headlines available.</div></div></li>';
+          return;
+        }
+
+        newsData.forEach(news => {
+          const li = document.createElement('li');
+          li.innerHTML = `
+            <a href="#" class="item-link item-content" data-id="${news.id}">
+              <div class="item-inner">
+                <div class="item-title-row">
+                  <div class="item-title">${news.headline_title || 'Untitled'}</div>
+                </div>
+                <div class="item-subtitle">${news.published || ''} - ${news.publisher || 'Unknown'}</div>
+              </div>
+            </a>
+          `;
+          li.querySelector('a').addEventListener('click', (e) => {
+            e.preventDefault();
+            openArticlePopup(news.id);
+          });
+          newsListEl.appendChild(li);
+        });
+      } catch (error) {
+        console.error('Error fetching news:', error);
+        newsListEl.innerHTML = '<li class="item-content"><div class="item-inner"><div class="item-title">Failed to load news.</div></div></li>';
+        app.dialog.alert('Could not load news headlines. Please try again later.');
+      }
+    }
+
+    // Open article popup and load article content
+    async function openArticlePopup(articleId) {
+      const titleEl = document.getElementById('popup-article-title');
+      const contentEl = document.getElementById('popup-article-content');
+      titleEl.textContent = 'Loading...';
+      contentEl.innerHTML = '<p>Loading article...</p>';
+      app.popup.open('#article-popup');
+
+      try {
+        const response = await fetch(`/api/news/${articleId}`);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const article = await response.json();
+        titleEl.textContent = article.headline_title || 'Untitled';
+        contentEl.innerHTML = `
+          <p><strong>Published:</strong> ${article.published || ''}</p>
+          <p><strong>Publisher:</strong> ${article.publisher || ''}</p>
+          <div>${article.headline_body || ''}</div>
+        `;
+      } catch (error) {
+        console.error('Error fetching article:', error);
+        titleEl.textContent = 'Error';
+        contentEl.innerHTML = '<p>Failed to load article content.</p>';
+      }
+    }
+
+    // Fetch news when home page is initialized
+    app.on('pageInit', (page) => {
+      console.log('pageInit event fired for page:', page.name);
+      if (page.name === 'home') {
+        fetchNewsData();
+      }
+    });
+
+    // Call fetchNewsData immediately on initial load
+    fetchNewsData();
+  </script>
+</body>
+</html>
