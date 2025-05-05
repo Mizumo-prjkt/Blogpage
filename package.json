@@ -1,0 +1,25 @@
+{
+    "name": "test-news",
+    "version": "1.0.0",
+    "description": "test-news forproject",
+    "main": "server.js",
+    "scripts": {
+        "start": "node server.js",
+        "dev": "nodemon server.js"
+    },
+    "dependencies": {
+        "express": "^5.1.0",
+        "framework7": "^8.3.4",
+        "framework7-icons": "^5.0.5",
+        "fs": "^0.0.1-security",
+        "jquery": "^3.7.1",
+        "json-bigint": "^1.0.0",
+        "mui": "^0.0.1",
+        "sqlite": "^5.1.1",
+        "sqlite3": "^5.1.7",
+        "test-news": "file:"
+    },
+    "devDependencies": {
+        "nodemon": "^3.1.10"
+    }
+}
